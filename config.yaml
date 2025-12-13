@@ -1,0 +1,84 @@
+# Crypto 自动化投研周报系统配置文件
+
+# API Keys (通过环境变量注入)
+api_keys:
+  glassnode: ${GLASSNODE_API_KEY}
+  coinglass: ${COINGLASS_API_KEY}
+  openai: ${OPENAI_API_KEY}
+  gemini: ${GEMINI_API_KEY}
+
+# 数据源配置
+data_sources:
+  glassnode:
+    base_url: "https://api.glassnode.com/v1"
+    timeout: 30
+    retry_times: 3
+
+  coinglass:
+    base_url: "https://open-api.coinglass.com/public/v2"
+    timeout: 30
+    retry_times: 3
+
+  yahoo_finance:
+    timeout: 20
+
+# 缓存配置
+cache:
+  ttl_hours: 12  # 本地文件缓存过期时间
+  dir: "./cache"
+
+# LLM 配置
+llm:
+  default_model: "gpt-4o"  # 或 "gemini-1.5-pro"
+  temperature: 0.7
+  max_tokens: 2000
+  timeout: 60
+
+# 图表配置
+charts:
+  dpi: 300
+  style_file: "./assets/style.mplstyle"
+  logo_path: "./assets/logo.png"
+  watermark_alpha: 0.15
+  output_dir: "./output/images"
+
+# PDF 配置
+pdf:
+  template_path: "./templates/report_template.html"
+  css_path: "./assets/css/report.css"
+  font_path: "./assets/fonts/SourceHanSansCN-Regular.ttf"
+  output_dir: "./output/reports"
+
+# Prompt 模板路径
+prompts:
+  executive_summary: "./prompts/executive_summary.txt"
+  macro_analysis: "./prompts/macro_analysis.txt"
+  btc_analysis: "./prompts/btc_analysis.txt"
+  eth_analysis: "./prompts/eth_analysis.txt"
+  news_summary: "./prompts/news_summary.txt"
+
+# 报告模块配置
+report_modules:
+  - name: "macro"
+    enabled: true
+    priority: 1
+  - name: "btc"
+    enabled: true
+    priority: 2
+  - name: "eth"
+    enabled: true
+    priority: 3
+  - name: "news"
+    enabled: true
+    priority: 4
+
+# Multi-Agent 配置
+agents:
+  max_retry: 2  # 审核-反驳最大轮次
+  enable_debate: false  # 是否启用辩论机制 (看涨vs看跌)
+
+# 定时任务配置 (可选)
+scheduler:
+  enabled: false
+  cron: "0 18 * * 5"  # 每周五 18:00
+  notify_email: ""

@@ -1,0 +1,74 @@
+# Glassnode 风格 Matplotlib 配置文件
+# 用于生成专业的加密货币分析图表
+
+# 图表尺寸和分辨率
+figure.figsize: 12, 7
+figure.dpi: 100
+figure.facecolor: white
+figure.edgecolor: white
+savefig.dpi: 300
+savefig.bbox: tight
+savefig.facecolor: white
+savefig.edgecolor: white
+
+# 配色方案 (Glassnode 风格)
+axes.prop_cycle: cycler('color', ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'])
+
+# 坐标轴样式
+axes.facecolor: white
+axes.edgecolor: #bdc3c7
+axes.linewidth: 1.5
+axes.grid: True
+axes.axisbelow: True
+
+# 网格样式
+grid.alpha: 0.3
+grid.color: #ecf0f1
+grid.linestyle: --
+grid.linewidth: 0.8
+
+# 字体配置
+font.size: 12
+font.family: sans-serif
+font.sans-serif: Arial, Helvetica, DejaVu Sans, sans-serif
+
+# 标题和标签字体大小
+axes.labelsize: 13
+axes.titlesize: 16
+axes.titleweight: bold
+axes.titlepad: 15
+
+# 刻度样式
+xtick.labelsize: 11
+ytick.labelsize: 11
+xtick.color: #34495e
+ytick.color: #34495e
+xtick.direction: out
+ytick.direction: out
+
+# 图例样式
+legend.fontsize: 11
+legend.frameon: True
+legend.framealpha: 0.9
+legend.facecolor: white
+legend.edgecolor: #bdc3c7
+legend.shadow: False
+legend.loc: best
+
+# 线条样式
+lines.linewidth: 2.5
+lines.markersize: 6
+lines.markeredgewidth: 0
+
+# 柱状图样式
+patch.edgecolor: none
+patch.force_edgecolor: False
+
+# 颜色映射
+image.cmap: viridis
+
+# 移除顶部和右侧边框
+axes.spines.top: False
+axes.spines.right: False
+axes.spines.left: True
+axes.spines.bottom: True
