@@ -81,6 +81,24 @@ with st.sidebar:
         default=[50, 200]
     )
 
+    chart_dpi = st.select_slider(
+        "图表分辨率 (DPI)",
+        options=[150, 200, 250, 300, 350, 400],
+        value=300
+    )
+
+    show_watermark = st.checkbox("显示水印", value=True)
+
+    # 高级选项
+    with st.expander("🔧 高级选项"):
+        normalize_prices = st.checkbox("价格标准化 (加密股票图)", value=True, help="将所有价格标准化为第一天=100,便于对比")
+        show_volume = st.checkbox("显示交易量", value=False, help="在价格图表中叠加交易量")
+        data_source = st.selectbox(
+            "数据源优先级",
+            options=["Glassnode 优先", "Yahoo Finance 优先", "全部使用"],
+            index=0
+        )
+
     # 缓存管理
     st.subheader("💾 缓存管理")
     cache_info = get_cache_info()
@@ -172,15 +190,51 @@ else:
                     # 根据图表数量动态调整布局
                     if len(chart_paths) == 1:
                         st.image(chart_paths[0], use_container_width=True)
+                        # 添加下载按钮
+                        with open(chart_paths[0], "rb") as f:
+                            st.download_button(
+                                label="📥 下载图表",
+                                data=f,
+                                file_name=os.path.basename(chart_paths[0]),
+                                mime="image/png"
+                            )
+
                     elif len(chart_paths) == 2:
                         col1, col2 = st.columns(2)
                         with col1:
                             st.image(chart_paths[0], use_container_width=True)
+                            with open(chart_paths[0], "rb") as f:
+                                st.download_button(
+                                    label="📥 下载",
+                                    data=f,
+                                    file_name=os.path.basename(chart_paths[0]),
+                                    mime="image/png",
+                                    key=f"download_{chart_paths[0]}"
+                                )
                         with col2:
                             st.image(chart_paths[1], use_container_width=True)
+                            with open(chart_paths[1], "rb") as f:
+                                st.download_button(
+                                    label="📥 下载",
+                                    data=f,
+                                    file_name=os.path.basename(chart_paths[1]),
+                                    mime="image/png",
+                                    key=f"download_{chart_paths[1]}"
+                                )
+
                     else:
-                        for chart_path in chart_paths:
-                            st.image(chart_path, use_container_width=True)
+                        # 多张图表:使用 expander 折叠显示
+                        for idx, chart_path in enumerate(chart_paths, 1):
+                            with st.expander(f"图表 {idx}: {os.path.basename(chart_path)}", expanded=(idx<=2)):
+                                st.image(chart_path, use_container_width=True)
+                                with open(chart_path, "rb") as f:
+                                    st.download_button(
+                                        label="📥 下载此图表",
+                                        data=f,
+                                        file_name=os.path.basename(chart_path),
+                                        mime="image/png",
+                                        key=f"download_{idx}_{chart_path}"
+                                    )
 
                     st.success(f"✅ {module.upper()} 模块完成 ({len(chart_paths)} 张图表)")
                 else:

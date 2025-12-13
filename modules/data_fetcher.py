@@ -279,13 +279,14 @@ def fetch_module_data(module_name: str, config: Dict) -> Dict:
     days = 30  # 默认30天
 
     if module_name == "macro":
-        # 宏观模块:美元指数、美债、美股
+        # 宏观模块:美元指数、美债、美股、加密相关股票
         return {
             "dxy": fetch_yahoo_data("DX-Y.NYB", days=days),
             "us10y": fetch_yahoo_data("^TNX", days=days),
             "sp500": fetch_yahoo_data("^GSPC", days=days),
             "nvda": fetch_yahoo_data("NVDA", days=days),
-            "coin": fetch_yahoo_data("COIN", days=days)
+            "coin": fetch_yahoo_data("COIN", days=days),
+            "mstr": fetch_yahoo_data("MSTR", days=days)  # MicroStrategy
         }
 
     elif module_name == "btc":

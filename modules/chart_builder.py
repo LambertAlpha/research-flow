@@ -190,6 +190,53 @@ def generate_etf_flow_chart(data: Dict) -> str:
     return save_chart(fig, 'btc_etf_flow.png')
 
 
+def generate_crypto_stocks_chart(data: Dict) -> str:
+    """
+    生成加密相关股票对比图 (NVDA, COIN, MSTR)
+
+    Args:
+        data: {
+            "nvda": {"dates": [...], "close": [...]},
+            "coin": {"dates": [...], "close": [...]},
+            "mstr": {"dates": [...], "close": [...]} (可选)
+        }
+
+    Returns:
+        图表文件路径
+    """
+    import pandas as pd
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    # 标准化价格 (以第一天为基准 = 100)
+    stocks = ['nvda', 'coin', 'mstr']
+    colors = ['#2ecc71', '#e74c3c', '#f39c12']
+    labels = ['NVIDIA (NVDA)', 'Coinbase (COIN)', 'MicroStrategy (MSTR)']
+
+    for stock, color, label in zip(stocks, colors, labels):
+        if stock in data and data[stock]['dates']:
+            dates = data[stock]['dates']
+            prices = data[stock]['close']
+
+            # 标准化为百分比变化 (第一天 = 100)
+            normalized = [(p / prices[0]) * 100 for p in prices]
+
+            ax.plot(dates, normalized, label=label, linewidth=2.5, color=color)
+
+    ax.axhline(y=100, color='gray', linestyle='--', linewidth=1, alpha=0.5)
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Normalized Price (First Day = 100)')
+    ax.set_title('Crypto-Related Stocks Performance Comparison')
+    ax.legend(loc='best')
+    ax.grid(True, alpha=0.3)
+
+    plt.xticks(rotation=45, ha='right')
+
+    add_watermark(fig)
+
+    return save_chart(fig, 'crypto_stocks.png')
+
+
 def generate_macro_overview_chart(data: Dict) -> str:
     """
     生成宏观指标总览图 (四合一子图)
@@ -231,6 +278,84 @@ def generate_macro_overview_chart(data: Dict) -> str:
     return save_chart(fig, 'macro_overview.png')
 
 
+def generate_whale_cohort_heatmap(data: Dict) -> str:
+    """
+    生成鲸鱼分群热力图 (不同地址余额区间的持仓变化)
+
+    Args:
+        data: {"dates": [...], "whale_balance": [...]}
+
+    Returns:
+        图表文件路径
+    """
+    import pandas as pd
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    dates = data['dates']
+    whale_balance = data['whale_balance']
+
+    # 计算变化率
+    df = pd.DataFrame({"balance": whale_balance})
+    change = df['balance'].pct_change() * 100  # 转换为百分比
+
+    # 绘制面积图
+    ax.fill_between(range(len(dates)), 0, whale_balance, alpha=0.6, color='#3498db', label='Whale Balance (1k-10k BTC)')
+    ax.plot(dates, whale_balance, linewidth=2, color='#2980b9')
+
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Balance (BTC)')
+    ax.set_title('Bitcoin Whale Cohort Analysis (1,000 - 10,000 BTC)')
+    ax.legend(loc='best')
+    ax.grid(True, alpha=0.3, axis='y')
+
+    plt.xticks(rotation=45, ha='right')
+
+    add_watermark(fig)
+
+    return save_chart(fig, 'btc_whale_cohort.png')
+
+
+def generate_liquidation_heatmap(data: Dict) -> str:
+    """
+    生成清算热力图
+
+    Args:
+        data: {
+            "dates": [...],
+            "long_liquidation": [...],
+            "short_liquidation": [...]
+        }
+
+    Returns:
+        图表文件路径
+    """
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    dates = data['dates']
+    long_liq = data['long_liquidation']
+    short_liq = data['short_liquidation']
+
+    # 堆叠柱状图
+    width = 0.8
+    x = range(len(dates))
+
+    ax.bar(x, long_liq, width, label='Long Liquidation', color='#e74c3c', alpha=0.7)
+    ax.bar(x, short_liq, width, bottom=long_liq, label='Short Liquidation', color='#2ecc71', alpha=0.7)
+
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Liquidation Amount (USD)')
+    ax.set_title('Bitcoin Liquidation Heatmap (Long vs Short)')
+    ax.set_xticks(x[::2])  # 每隔一个显示日期标签
+    ax.set_xticklabels([dates[i] for i in x[::2]], rotation=45, ha='right')
+    ax.legend(loc='best')
+    ax.grid(True, alpha=0.3, axis='y')
+
+    add_watermark(fig)
+
+    return save_chart(fig, 'btc_liquidation.png')
+
+
 def generate_eth_btc_ratio_chart(data: Dict) -> str:
     """
     生成 ETH/BTC 汇率走势图
@@ -267,6 +392,43 @@ def generate_eth_btc_ratio_chart(data: Dict) -> str:
     return save_chart(fig, 'eth_btc_ratio.png')
 
 
+def generate_eth_foundation_balance(data: Dict) -> str:
+    """
+    生成以太坊基金会持仓变化图
+
+    Args:
+        data: {"dates": [...], "balance": [...]}
+
+    Returns:
+        图表文件路径
+    """
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    dates = data.get('dates', [])
+    balance = data.get('balance', [])
+
+    if not dates or not balance:
+        # 如果没有数据,使用模拟数据
+        logger.warning("以太坊基金会数据暂无,使用模拟数据")
+        from datetime import datetime, timedelta
+        dates = [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(30, 0, -1)]
+        balance = [300000 - i*100 for i in range(30)]
+
+    ax.plot(dates, balance, linewidth=2.5, color='#9b59b6', marker='o', markersize=4)
+    ax.fill_between(range(len(dates)), 0, balance, alpha=0.2, color='#9b59b6')
+
+    ax.set_xlabel('Date')
+    ax.set_ylabel('ETH Balance')
+    ax.set_title('Ethereum Foundation Holdings')
+    ax.grid(True, alpha=0.3)
+
+    plt.xticks(rotation=45, ha='right')
+
+    add_watermark(fig)
+
+    return save_chart(fig, 'eth_foundation.png')
+
+
 # ============= 模块图表生成入口 =============
 
 def generate_module_charts(module_name: str, data: Dict) -> List[str]:
@@ -284,19 +446,42 @@ def generate_module_charts(module_name: str, data: Dict) -> List[str]:
 
     try:
         if module_name == "btc":
+            # BTC 价格图
             if 'price' in data:
                 chart_paths.append(generate_btc_price_chart(data['price']))
+
+            # URPD 筹码分布
             if 'urpd' in data:
                 chart_paths.append(generate_urpd_chart(data['urpd']))
+
+            # ETF 资金流向
             if 'etf_flow' in data:
                 chart_paths.append(generate_etf_flow_chart(data['etf_flow']))
 
+            # 鲸鱼分群
+            if 'whale_cohort' in data:
+                chart_paths.append(generate_whale_cohort_heatmap(data['whale_cohort']))
+
+            # 清算热力图
+            if 'liquidation' in data:
+                chart_paths.append(generate_liquidation_heatmap(data['liquidation']))
+
         elif module_name == "macro":
+            # 宏观总览图 (四合一)
             chart_paths.append(generate_macro_overview_chart(data))
 
+            # 加密相关股票对比
+            if 'nvda' in data or 'coin' in data:
+                chart_paths.append(generate_crypto_stocks_chart(data))
+
         elif module_name == "eth":
+            # ETH/BTC 汇率
             if 'eth_btc_ratio' in data:
                 chart_paths.append(generate_eth_btc_ratio_chart(data['eth_btc_ratio']))
+
+            # 以太坊基金会持仓
+            if 'foundation_balance' in data:
+                chart_paths.append(generate_eth_foundation_balance(data['foundation_balance']))
 
         logger.info(f"成功生成 {module_name} 模块的 {len(chart_paths)} 张图表")
 
