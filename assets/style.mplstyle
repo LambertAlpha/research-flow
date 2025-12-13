@@ -12,18 +12,18 @@ savefig.facecolor: white
 savefig.edgecolor: white
 
 # 配色方案 (Glassnode 风格)
-axes.prop_cycle: cycler('color', ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'])
+axes.prop_cycle: cycler('color', ['3498db', 'e74c3c', '2ecc71', 'f39c12', '9b59b6', '1abc9c'])
 
 # 坐标轴样式
 axes.facecolor: white
-axes.edgecolor: #bdc3c7
+axes.edgecolor: bdc3c7
 axes.linewidth: 1.5
 axes.grid: True
 axes.axisbelow: True
 
 # 网格样式
 grid.alpha: 0.3
-grid.color: #ecf0f1
+grid.color: ecf0f1
 grid.linestyle: --
 grid.linewidth: 0.8
 
@@ -41,8 +41,8 @@ axes.titlepad: 15
 # 刻度样式
 xtick.labelsize: 11
 ytick.labelsize: 11
-xtick.color: #34495e
-ytick.color: #34495e
+xtick.color: 34495e
+ytick.color: 34495e
 xtick.direction: out
 ytick.direction: out
 
@@ -51,7 +51,7 @@ legend.fontsize: 11
 legend.frameon: True
 legend.framealpha: 0.9
 legend.facecolor: white
-legend.edgecolor: #bdc3c7
+legend.edgecolor: bdc3c7
 legend.shadow: False
 legend.loc: best
 
