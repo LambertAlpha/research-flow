@@ -197,10 +197,28 @@ def fetch_yahoo_data(ticker: str, days: int = 30) -> Dict:
             logger.warning(f"未获取到 {ticker} 的数据")
             return {"dates": [], "close": [], "volume": []}
 
+        # 处理 yfinance 返回的数据格式
+        # 如果是 Series,直接转换;如果是 DataFrame,需要先取值
+        close_data = data['Close']
+        volume_data = data['Volume'] if 'Volume' in data.columns else []
+
+        # 转换为列表
+        if hasattr(close_data, 'values'):
+            close_list = close_data.values.tolist()
+        else:
+            close_list = close_data.tolist()
+
+        if hasattr(volume_data, 'values'):
+            volume_list = volume_data.values.tolist()
+        elif hasattr(volume_data, 'tolist'):
+            volume_list = volume_data.tolist()
+        else:
+            volume_list = []
+
         result = {
             "dates": data.index.strftime('%Y-%m-%d').tolist(),
-            "close": data['Close'].tolist(),
-            "volume": data['Volume'].tolist() if 'Volume' in data.columns else []
+            "close": close_list,
+            "volume": volume_list
         }
 
         logger.info(f"成功获取 {ticker} 数据, 共 {len(result['dates'])} 天")
