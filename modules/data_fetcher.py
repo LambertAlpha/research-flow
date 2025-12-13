@@ -202,14 +202,15 @@ def fetch_yahoo_data(ticker: str, days: int = 30) -> Dict:
         close_data = data['Close']
         volume_data = data['Volume'] if 'Volume' in data.columns else []
 
-        # 转换为列表
+        # 转换为列表（处理 Series 和 DataFrame）
         if hasattr(close_data, 'values'):
-            close_list = close_data.values.tolist()
+            # DataFrame: values 是 2D 数组，需要展平
+            close_list = close_data.values.flatten().tolist()
         else:
             close_list = close_data.tolist()
 
         if hasattr(volume_data, 'values'):
-            volume_list = volume_data.values.tolist()
+            volume_list = volume_data.values.flatten().tolist()
         elif hasattr(volume_data, 'tolist'):
             volume_list = volume_data.tolist()
         else:
