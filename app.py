@@ -9,6 +9,8 @@ from modules.data_fetcher import fetch_module_data, fetch_yahoo_data
 from modules.chart_builder import generate_module_charts
 from modules.utils import get_cache_info, clear_cache
 from modules.llm_writer import LLMWriter, ContentCache, prepare_btc_context, prepare_macro_context
+from modules.pdf_exporter import generate_report_pdf
+from modules.agent_graph import run_report_generation, get_workflow_visualization
 
 # 页面配置
 st.set_page_config(
@@ -376,12 +378,151 @@ with st.expander("📋 查看原始数据"):
     except Exception as e:
         st.error(f"无法加载数据: {e}")
 
+# ============= PDF 导出 =============
+
+st.divider()
+st.markdown('<div class="section-header">📄 PDF 导出</div>', unsafe_allow_html=True)
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.info("生成专业的 PDF 周报，包含所有图表和文案")
+
+with col2:
+    enable_pdf = st.checkbox("启用 PDF", value=False)
+
+if enable_pdf:
+    if st.button("📥 生成 PDF 报告", type="primary", use_container_width=True):
+        try:
+            with st.spinner("正在生成 PDF..."):
+                # 准备数据
+                chart_paths = {"macro": []}
+                content = {}
+
+                # 获取图表路径
+                import glob
+                macro_charts = glob.glob("output/images/*/macro_*.png")
+                if macro_charts:
+                    chart_paths["macro"] = sorted(macro_charts, reverse=True)[:2]
+
+                # 获取文案
+                cache = ContentCache()
+                versions = cache.list_versions()
+                if versions:
+                    latest = cache.load(versions[0]["version"])
+                    content = latest.get("content", {})
+
+                # 准备指标
+                btc_data = fetch_yahoo_data("BTC-USD", days=7)
+                btc_price = btc_data["close"][-1]
+                btc_change = ((btc_data["close"][-1] - btc_data["close"][-7]) / btc_data["close"][-7] * 100) if len(btc_data["close"]) >= 7 else 0
+
+                metrics = [
+                    {"label": "BTC 价格", "value": f"${btc_price:,.0f}", "delta": f"{btc_change:+.2f}%"},
+                    {"label": "报告模块", "value": str(len(chart_paths)), "delta": "--"},
+                    {"label": "图表数量", "value": str(sum(len(c) for c in chart_paths.values())), "delta": "--"}
+                ]
+
+                # 生成 PDF
+                pdf_path = generate_report_pdf(
+                    chart_paths=chart_paths,
+                    content=content,
+                    metrics=metrics
+                )
+
+                st.success(f"✅ PDF 已生成: {pdf_path}")
+
+                # 下载按钮
+                with open(pdf_path, "rb") as f:
+                    st.download_button(
+                        label="📥 下载 PDF",
+                        data=f,
+                        file_name=os.path.basename(pdf_path),
+                        mime="application/pdf"
+                    )
+
+        except Exception as e:
+            st.error(f"❌ PDF 生成失败: {str(e)}")
+            with st.expander("查看错误详情"):
+                import traceback
+                st.code(traceback.format_exc())
+
+# ============= Multi-Agent 工作流 =============
+
+st.divider()
+st.markdown('<div class="section-header">🤖 Multi-Agent 自动化工作流</div>', unsafe_allow_html=True)
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.info("使用 LangGraph Multi-Agent 系统自动化完成数据抓取→图表生成→文案撰写→质量审核")
+
+with col2:
+    enable_agent = st.checkbox("启用 Agent", value=False)
+
+if enable_agent:
+    # 显示工作流可视化
+    with st.expander("📊 查看工作流结构"):
+        st.markdown("```mermaid\n" + get_workflow_visualization() + "\n```")
+        st.caption("工作流包含 5 个 Agent: Chief Editor, Data Engineer, Chartist, Senior Analyst, Debate Node")
+
+    if st.button("🚀 启动 Multi-Agent 工作流", type="primary", use_container_width=True):
+        try:
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
+            # 确定报告周期
+            today = datetime.now()
+            week_start = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+            week_end = today.strftime("%Y-%m-%d")
+            report_period = f"{week_start} ~ {week_end}"
+
+            status_text.text(f"正在启动工作流... 报告周期: {report_period}")
+            progress_bar.progress(0.1)
+
+            # 运行工作流
+            final_state = run_report_generation(report_period, verbose=False)
+
+            progress_bar.progress(1.0)
+            status_text.text("工作流执行完成!")
+
+            # 显示结果
+            st.success("✅ Multi-Agent 工作流执行成功！")
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("质量评分", f"{final_state.get('quality_score', 0):.1f}/100")
+            with col2:
+                st.metric("辩论轮数", final_state.get("debate_rounds", 0))
+            with col3:
+                chart_count = sum(len(charts) for charts in final_state.get("chart_paths", {}).values())
+                st.metric("生成图表", chart_count)
+
+            # 显示生成的文案
+            if final_state.get("final_content"):
+                st.markdown("### 📝 生成的文案")
+                for key, text in final_state["final_content"].items():
+                    with st.expander(f"{key}", expanded=True):
+                        st.markdown(text)
+
+            # 显示问题（如果有）
+            if final_state.get("issues"):
+                st.warning("⚠️ 检测到的问题:")
+                for issue in final_state["issues"]:
+                    st.text(f"• {issue}")
+
+        except Exception as e:
+            st.error(f"❌ 工作流执行失败: {str(e)}")
+            with st.expander("查看错误详情"):
+                import traceback
+                st.code(traceback.format_exc())
+
 # ============= 页脚 =============
 
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: #7f8c8d; padding: 2rem;">
-    <p>Crypto 自动化投研周报系统 v0.1.0 (MVP)</p>
+    <p>Crypto 自动化投研周报系统 v0.2.0 (Beta)</p>
     <p>数据来源: Glassnode, Yahoo Finance, Coinglass</p>
     <p>⚠️ 注意: 确保已在 .env 文件中配置 API Keys</p>
 </div>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report_title }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm;
+            @top-center {
+                content: "{{ report_title }}";
+                font-size: 10pt;
+                color: #7f8c8d;
+            }
+            @bottom-center {
+                content: "第 " counter(page) " 页";
+                font-size: 9pt;
+                color: #95a5a6;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", "Source Han Sans CN", sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #fff;
+        }
+
+        .cover-page {
+            page-break-after: always;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cover-title {
+            font-size: 36pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .cover-subtitle {
+            font-size: 18pt;
+            color: #7f8c8d;
+            margin-bottom: 3rem;
+        }
+
+        .cover-meta {
+            font-size: 12pt;
+            color: #95a5a6;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .subsection-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #34495e;
+            margin: 1.5rem 0 0.8rem 0;
+        }
+
+        .content-text {
+            text-align: justify;
+            text-indent: 2em;
+            margin-bottom: 0.8rem;
+            line-height: 1.8;
+        }
+
+        .chart-container {
+            margin: 1.5rem 0;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        .chart-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ecf0f1;
+            border-radius: 4px;
+        }
+
+        .chart-caption {
+            font-size: 10pt;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .metric-card {
+            background: #ecf0f1;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 10pt;
+            color: #7f8c8d;
+            margin-bottom: 0.3rem;
+        }
+
+        .metric-value {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .metric-delta {
+            font-size: 10pt;
+            margin-top: 0.3rem;
+        }
+
+        .positive {
+            color: #27ae60;
+        }
+
+        .negative {
+            color: #e74c3c;
+        }
+
+        .summary-box {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #ecf0f1;
+            font-size: 9pt;
+            color: #95a5a6;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        th {
+            background: #ecf0f1;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- 封面 -->
+    <div class="cover-page">
+        <div class="cover-title">{{ report_title }}</div>
+        <div class="cover-subtitle">{{ report_period }}</div>
+        <div class="cover-meta">
+            <p>生成时间: {{ generation_time }}</p>
+            <p>版本: {{ version }}</p>
+        </div>
+    </div>
+
+    <!-- 摘要 -->
+    <div class="section">
+        <h1 class="section-title">📊 市场概览</h1>
+
+        <div class="metrics-grid">
+            {% for metric in overview_metrics %}
+            <div class="metric-card">
+                <div class="metric-label">{{ metric.label }}</div>
+                <div class="metric-value">{{ metric.value }}</div>
+                <div class="metric-delta {{ 'positive' if metric.delta > 0 else 'negative' }}">
+                    {{ metric.delta }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if summary_content %}
+        <div class="summary-box">
+            <p class="content-text">{{ summary_content }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- BTC 分析 -->
+    {% if btc_section %}
+    <div class="section">
+        <h1 class="section-title">₿ BTC 市场分析</h1>
+
+        {% if btc_section.content %}
+        <p class="content-text">{{ btc_section.content }}</p>
+        {% endif %}
+
+        {% for chart in btc_section.charts %}
+        <div class="chart-container">
+            <img src="{{ chart.path }}" class="chart-image" alt="{{ chart.title }}">
+            <p class="chart-caption">{{ chart.caption }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="page-break"></div>
+
+    <!-- 宏观分析 -->
+    {% if macro_section %}
+    <div class="section">
+        <h1 class="section-title">🌍 宏观环境分析</h1>
+
+        {% if macro_section.content %}
+        <p class="content-text">{{ macro_section.content }}</p>
+        {% endif %}
+
+        {% for chart in macro_section.charts %}
+        <div class="chart-container">
+            <img src="{{ chart.path }}" class="chart-image" alt="{{ chart.title }}">
+            <p class="chart-caption">{{ chart.caption }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="page-break"></div>
+
+    <!-- 链上分析 -->
+    {% if onchain_section %}
+    <div class="section">
+        <h1 class="section-title">⛓️ 链上数据分析</h1>
+
+        {% if onchain_section.content %}
+        <p class="content-text">{{ onchain_section.content }}</p>
+        {% endif %}
+
+        {% for chart in onchain_section.charts %}
+        <div class="chart-container">
+            <img src="{{ chart.path }}" class="chart-image" alt="{{ chart.title }}">
+            <p class="chart-caption">{{ chart.caption }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 页脚 -->
+    <div class="footer">
+        <p>本报告由 Crypto 自动化投研系统生成</p>
+        <p>数据来源: Glassnode, Yahoo Finance, Coinglass | LLM: {{ llm_model }}</p>
+        <p>⚠️ 免责声明: 本报告仅供参考，不构成投资建议</p>
+    </div>
+</body>
+</html>
