@@ -8,6 +8,7 @@ import os
 from modules.data_fetcher import fetch_module_data, fetch_yahoo_data
 from modules.chart_builder import generate_module_charts
 from modules.utils import get_cache_info, clear_cache
+from modules.llm_writer import LLMWriter, ContentCache, prepare_btc_context, prepare_macro_context
 
 # 页面配置
 st.set_page_config(
@@ -246,6 +247,117 @@ else:
         progress_bar.progress(1.0)
         status_text.text("所有模块处理完成!")
         st.balloons()
+
+# ============= LLM 文案生成 =============
+
+st.divider()
+st.markdown('<div class="section-header">✍️ LLM 文案生成</div>', unsafe_allow_html=True)
+
+# LLM 配置
+col1, col2, col3 = st.columns([2, 2, 1])
+
+with col1:
+    llm_model = st.selectbox(
+        "选择 LLM 模型",
+        options=["gpt-4o", "gpt-4o-mini", "gemini-pro"],
+        help="GPT-4o 质量更高但成本更高，GPT-4o-mini 性价比高，Gemini 免费"
+    )
+
+with col2:
+    llm_temperature = st.slider(
+        "生成温度",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.7,
+        step=0.1,
+        help="较低温度生成更保守，较高温度更具创造性"
+    )
+
+with col3:
+    enable_llm = st.checkbox("启用 LLM", value=False)
+
+if enable_llm:
+    # 检查 API Key
+    api_key_available = False
+    if llm_model.startswith("gpt"):
+        api_key_available = os.getenv("OPENAI_API_KEY") is not None
+    elif llm_model.startswith("gemini"):
+        api_key_available = os.getenv("GEMINI_API_KEY") is not None
+
+    if not api_key_available:
+        st.error(f"⚠️ 未检测到 {llm_model.upper()} API Key，请在 .env 文件中配置")
+    else:
+        if st.button("🤖 生成文案", type="primary", use_container_width=True):
+            try:
+                with st.spinner("正在生成文案..."):
+                    # 初始化 LLM Writer
+                    writer = LLMWriter(model=llm_model)
+
+                    # 获取数据
+                    btc_data = fetch_yahoo_data("BTC-USD", days=30)
+                    macro_data_raw = fetch_module_data("macro", {})
+
+                    # 准备上下文
+                    btc_context = prepare_btc_context(btc_data)
+                    macro_context = prepare_macro_context(macro_data_raw)
+
+                    # 生成文案
+                    tasks = [
+                        {"type": "btc_analysis", "context": btc_context},
+                        {"type": "macro_analysis", "context": macro_context}
+                    ]
+
+                    results = writer.generate_batch(tasks)
+
+                    # 保存到缓存
+                    cache = ContentCache()
+                    cache_path = cache.save(results)
+
+                    # 显示结果
+                    st.success(f"✅ 文案生成完成！已保存到: {cache_path}")
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        st.markdown("### 📈 BTC 市场分析")
+                        st.markdown(results.get("btc_analysis", "生成失败"))
+
+                    with col2:
+                        st.markdown("### 🌍 宏观环境分析")
+                        st.markdown(results.get("macro_analysis", "生成失败"))
+
+                    # 下载按钮
+                    import json
+                    content_json = json.dumps(results, ensure_ascii=False, indent=2)
+                    st.download_button(
+                        label="📥 下载文案 (JSON)",
+                        data=content_json,
+                        file_name=f"content_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                        mime="application/json"
+                    )
+
+            except Exception as e:
+                st.error(f"❌ 文案生成失败: {str(e)}")
+                import traceback
+                with st.expander("查看错误详情"):
+                    st.code(traceback.format_exc())
+
+        # 历史版本管理
+        with st.expander("📚 历史文案版本"):
+            cache = ContentCache()
+            versions = cache.list_versions()
+
+            if not versions:
+                st.info("暂无历史版本")
+            else:
+                for v in versions[:5]:  # 只显示最近 5 个版本
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.text(f"版本: {v['version']} ({v['timestamp']})")
+                    with col2:
+                        if st.button("加载", key=f"load_{v['version']}"):
+                            loaded = cache.load(v['version'])
+                            st.json(loaded['content'])
 
 # ============= 数据表格预览 (可选) =============
 
