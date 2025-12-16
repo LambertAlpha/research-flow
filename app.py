@@ -261,8 +261,8 @@ col1, col2, col3 = st.columns([2, 2, 1])
 with col1:
     llm_model = st.selectbox(
         "选择 LLM 模型",
-        options=["gpt-4o", "gpt-4o-mini", "gemini-pro"],
-        help="GPT-4o 质量更高但成本更高，GPT-4o-mini 性价比高，Gemini 免费"
+        options=["gemini-flash", "gemini-pro", "gpt-4o", "gpt-4o-mini"],
+        help="Gemini Flash 免费且快速（推荐），Gemini Pro 质量更高，GPT-4o 成本最高"
     )
 
 with col2:

@@ -154,8 +154,11 @@ class LLMWriter:
                 raise ValueError("未找到 GEMINI_API_KEY")
 
             genai.configure(api_key=api_key)
-            self.client = genai.GenerativeModel('gemini-pro')
-            logger.info(f"已初始化 Gemini 客户端")
+
+            # 使用最新的 Gemini 模型（gemini-pro 已废弃）
+            model_name = "gemini-2.5-flash" if "flash" in self.model else "gemini-2.5-pro"
+            self.client = genai.GenerativeModel(model_name)
+            logger.info(f"已初始化 Gemini 客户端，模型: {model_name}")
 
         except ImportError:
             raise ImportError("请安装 google-generativeai: pip install google-generativeai")
