@@ -127,10 +127,10 @@ def senior_analyst_node(state: AgentState) -> AgentState:
     logger.info("✍️ Senior Analyst 开始工作...")
 
     try:
-        # 检查是否有 LLM API key（优先使用 Gemini）
+        # 检查是否有 LLM API key（优先使用 OpenRouter/OpenAI）
         import os
-        has_gemini = os.getenv("GEMINI_API_KEY") is not None
         has_openai = os.getenv("OPENAI_API_KEY") is not None
+        has_gemini = os.getenv("GEMINI_API_KEY") is not None
 
         if not (has_openai or has_gemini):
             logger.warning("⚠️ 未配置 LLM API Key，使用 Mock 文案")
@@ -141,8 +141,8 @@ def senior_analyst_node(state: AgentState) -> AgentState:
             state["current_step"] = "review"
             return state
 
-        # 使用真实 LLM 生成文案（优先 Gemini Flash）
-        model = "gemini-flash" if has_gemini else "gpt-4o"
+        # 使用真实 LLM 生成文案（优先 OpenRouter/OpenAI）
+        model = "gpt-4o" if has_openai else "gemini-flash"
         writer = LLMWriter(model=model)
 
         # 准备上下文

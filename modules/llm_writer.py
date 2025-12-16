@@ -9,6 +9,12 @@ import logging
 from typing import Dict, List, Optional
 from datetime import datetime
 import json
+from pathlib import Path
+from dotenv import load_dotenv
+
+# 加载环境变量（从项目根目录）
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +136,7 @@ class LLMWriter:
             raise ValueError(f"不支持的模型: {model}")
 
     def _init_openai(self):
-        """初始化 OpenAI 客户端"""
+        """初始化 OpenAI 客户端（支持 OpenRouter）"""
         try:
             from openai import OpenAI
 
@@ -138,8 +144,16 @@ class LLMWriter:
             if not api_key:
                 raise ValueError("未找到 OPENAI_API_KEY")
 
-            self.client = OpenAI(api_key=api_key)
-            logger.info(f"已初始化 OpenAI 客户端，模型: {self.model}")
+            # 检测是否是 OpenRouter API Key
+            if api_key.startswith("sk-or-"):
+                self.client = OpenAI(
+                    api_key=api_key,
+                    base_url="https://openrouter.ai/api/v1"
+                )
+                logger.info(f"已初始化 OpenRouter 客户端，模型: {self.model}")
+            else:
+                self.client = OpenAI(api_key=api_key)
+                logger.info(f"已初始化 OpenAI 客户端，模型: {self.model}")
 
         except ImportError:
             raise ImportError("请安装 openai: pip install openai")
