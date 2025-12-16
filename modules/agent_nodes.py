@@ -129,6 +129,13 @@ def senior_analyst_node(state: AgentState) -> AgentState:
     try:
         # 检查是否有 LLM API key（优先使用 OpenRouter/OpenAI）
         import os
+        from pathlib import Path
+        from dotenv import load_dotenv
+
+        # 强制重新加载环境变量
+        env_path = Path(__file__).parent.parent / ".env"
+        load_dotenv(dotenv_path=env_path, override=True)
+
         has_openai = os.getenv("OPENAI_API_KEY") is not None
         has_gemini = os.getenv("GEMINI_API_KEY") is not None
 
