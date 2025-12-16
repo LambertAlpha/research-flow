@@ -310,13 +310,28 @@ def fetch_module_data(module_name: str, config: Dict) -> Dict:
 
     elif module_name == "btc":
         # BTC 深度分析
-        return {
+        result = {
             "price": fetch_yahoo_data("BTC-USD", days=days),
-            "urpd": fetch_glassnode_urpd("BTC", days=days),
-            "etf_flow": fetch_glassnode_etf_flow("BTC", days=days),
-            "whale_cohort": fetch_glassnode_whale_cohort("BTC", days=90),
-            "liquidation": fetch_coinglass_liquidation("BTC", days=7)
         }
+
+        # 尝试获取 Glassnode 数据（需要 API key）
+        if GLASSNODE_API_KEY:
+            try:
+                result["urpd"] = fetch_glassnode_urpd("BTC", days=days)
+                result["etf_flow"] = fetch_glassnode_etf_flow("BTC", days=days)
+                result["whale_cohort"] = fetch_glassnode_whale_cohort("BTC", days=90)
+            except Exception as e:
+                logger.warning(f"获取 Glassnode 数据失败: {e}")
+        else:
+            logger.info("未配置 GLASSNODE_API_KEY，跳过链上数据")
+
+        # 尝试获取 Coinglass 数据
+        try:
+            result["liquidation"] = fetch_coinglass_liquidation("BTC", days=7)
+        except Exception as e:
+            logger.warning(f"获取清算数据失败: {e}")
+
+        return result
 
     elif module_name == "eth":
         # ETH 分析

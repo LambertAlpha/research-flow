@@ -68,7 +68,7 @@ def data_engineer_node(state: AgentState) -> AgentState:
 
     try:
         # 获取所有模块数据
-        modules = ["macro"]  # 只抓取不需要 API key 的模块
+        modules = ["macro", "btc"]  # 添加 BTC 模块
 
         raw_data = {}
         for module in modules:
@@ -155,15 +155,34 @@ def senior_analyst_node(state: AgentState) -> AgentState:
         # 准备上下文
         raw_data = state.get("raw_data", {})
         macro_data = raw_data.get("macro", {})
+        btc_data = raw_data.get("btc", {})
 
+        draft_content = {}
+
+        # 生成宏观分析
         if macro_data:
             macro_context = prepare_macro_context(macro_data)
             content = writer.generate("macro_analysis", macro_context)
-            state["draft_content"] = {"macro_analysis": content}
-            state["reviewed_content"] = state["draft_content"]
-            logger.info("✅ LLM 文案生成完成")
+            draft_content["macro_analysis"] = content
+            logger.info("✅ 宏观分析文案生成完成")
         else:
-            state["issues"].append("缺少宏观数据，无法生成文案")
+            state["issues"].append("缺少宏观数据")
+
+        # 生成 BTC 分析
+        if btc_data:
+            btc_context = prepare_btc_context(btc_data, macro_data)
+            content = writer.generate("btc_analysis", btc_context)
+            draft_content["btc_analysis"] = content
+            logger.info("✅ BTC 分析文案生成完成")
+        else:
+            state["issues"].append("缺少 BTC 数据")
+
+        if draft_content:
+            state["draft_content"] = draft_content
+            state["reviewed_content"] = state["draft_content"]
+            logger.info(f"✅ LLM 文案生成完成，共 {len(draft_content)} 个部分")
+        else:
+            state["issues"].append("无法生成任何文案")
 
         state["current_step"] = "review"
 

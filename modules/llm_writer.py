@@ -336,35 +336,50 @@ class ContentCache:
         return versions
 
 
-def prepare_btc_context(price_data: Dict, technical_data: Optional[Dict] = None,
-                        macro_data: Optional[Dict] = None) -> Dict:
+def prepare_btc_context(btc_data: Dict, macro_data: Optional[Dict] = None) -> Dict:
     """
     准备 BTC 分析的上下文数据
 
     Args:
-        price_data: {"dates": [...], "close": [...]}
-        technical_data: 技术指标数据
-        macro_data: 宏观数据
+        btc_data: BTC 模块数据 {"price": {...}, "urpd": {...}, ...}
+        macro_data: 宏观数据（可选）
 
     Returns:
         格式化的上下文字典
     """
-    prices = price_data["close"]
+    # 提取价格数据
+    price_data = btc_data.get("price", {})
+    prices = price_data.get("close", [])
+
+    if not prices:
+        # 如果没有价格数据，返回空上下文
+        return {
+            "current_price": 0,
+            "weekly_change": 0,
+            "high_30d": 0,
+            "low_30d": 0,
+            "technical_indicators": "数据暂无",
+            "macro_context": "数据暂无"
+        }
 
     current_price = prices[-1]
     weekly_change = ((prices[-1] - prices[-7]) / prices[-7] * 100) if len(prices) >= 7 else 0
     high_30d = max(prices)
     low_30d = min(prices)
 
-    # 技术指标
-    if technical_data:
-        tech_indicators = "\n".join([f"- {k}: {v}" for k, v in technical_data.items()])
-    else:
-        tech_indicators = "- MA7: 暂无数据\n- MA30: 暂无数据"
+    # 计算简单技术指标 (MA7, MA30)
+    ma7 = sum(prices[-7:]) / len(prices[-7:]) if len(prices) >= 7 else current_price
+    ma30 = sum(prices[-30:]) / len(prices[-30:]) if len(prices) >= 30 else current_price
+
+    tech_indicators = f"- MA7: ${ma7:,.0f}\n- MA30: ${ma30:,.0f}"
 
     # 宏观背景
     if macro_data:
-        macro_context = f"美元指数: {macro_data.get('dxy', 'N/A')}, 美债收益率: {macro_data.get('us10y', 'N/A')}%"
+        dxy_data = macro_data.get('dxy', {})
+        us10y_data = macro_data.get('us10y', {})
+        dxy_val = dxy_data.get('close', [0])[-1] if dxy_data.get('close') else 'N/A'
+        us10y_val = us10y_data.get('close', [0])[-1] if us10y_data.get('close') else 'N/A'
+        macro_context = f"美元指数: {dxy_val}, 美债收益率: {us10y_val}%"
     else:
         macro_context = "宏观数据暂无"
 
@@ -388,10 +403,15 @@ def prepare_macro_context(macro_data: Dict) -> Dict:
             return ((close[-1] - close[-7]) / close[-7] * 100)
         return 0.0
 
+    def safe_get_last(data_dict, default=0.0):
+        """安全获取最后一个值"""
+        close = data_dict.get("close", [])
+        return close[-1] if close else default
+
     return {
-        "dxy_current": macro_data.get("dxy", {}).get("close", [0])[-1],
+        "dxy_current": safe_get_last(macro_data.get("dxy", {}), default=100.0),
         "dxy_change": calc_change(macro_data.get("dxy", {})),
-        "us10y_current": macro_data.get("us10y", {}).get("close", [0])[-1],
+        "us10y_current": safe_get_last(macro_data.get("us10y", {}), default=4.0),
         "us10y_change": calc_change(macro_data.get("us10y", {})) * 100,  # 转换为 bps
         "sp500_change": calc_change(macro_data.get("sp500", {})),
         "nvda_change": calc_change(macro_data.get("nvda", {})),
