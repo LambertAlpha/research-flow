@@ -152,6 +152,16 @@ def senior_analyst_node(state: AgentState) -> AgentState:
         model = "gpt-4o" if has_openai else "gemini-flash"
         writer = LLMWriter(model=model)
 
+        # 初始化 RAG Manager
+        from modules.rag_manager import RAGManager
+
+        rag = None
+        try:
+            rag = RAGManager()
+            logger.info("✅ RAG Manager 已加载")
+        except Exception as e:
+            logger.warning(f"⚠️  RAG Manager 加载失败,将不使用历史参考: {e}")
+
         # 准备上下文
         raw_data = state.get("raw_data", {})
         macro_data = raw_data.get("macro", {})
@@ -162,6 +172,15 @@ def senior_analyst_node(state: AgentState) -> AgentState:
         # 生成宏观分析
         if macro_data:
             macro_context = prepare_macro_context(macro_data)
+
+            # 检索历史参考
+            if rag:
+                try:
+                    rag_context = rag.retrieve_context("macro_analysis", macro_context)
+                    macro_context.update(rag_context)  # 添加 style_guide 和 reasoning_examples
+                except Exception as e:
+                    logger.warning(f"RAG 检索失败: {e}")
+
             content = writer.generate("macro_analysis", macro_context)
             draft_content["macro_analysis"] = content
             logger.info("✅ 宏观分析文案生成完成")
@@ -171,6 +190,15 @@ def senior_analyst_node(state: AgentState) -> AgentState:
         # 生成 BTC 分析
         if btc_data:
             btc_context = prepare_btc_context(btc_data, macro_data)
+
+            # 检索历史参考
+            if rag:
+                try:
+                    rag_context = rag.retrieve_context("btc_analysis", btc_context)
+                    btc_context.update(rag_context)  # 添加 style_guide 和 reasoning_examples
+                except Exception as e:
+                    logger.warning(f"RAG 检索失败: {e}")
+
             content = writer.generate("btc_analysis", btc_context)
             draft_content["btc_analysis"] = content
             logger.info("✅ BTC 分析文案生成完成")

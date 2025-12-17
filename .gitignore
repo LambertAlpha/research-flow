@@ -1,6 +1,8 @@
 # 环境变量和配置
 .env
 *.env
+.env.local
+.env.*.local
 
 # Python
 __pycache__/
@@ -8,40 +10,121 @@ __pycache__/
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# 虚拟环境
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 类型检查
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
 
 # 缓存文件
 cache/
 *.pkl
 *.pickle
+*.cache
+
+# 数据库文件
+chroma_db/
+*.db
+*.sqlite
+*.sqlite3
 
 # 输出文件
 output/
 *.pdf
 *.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# 原始数据文件（通常较大，不提交到仓库）
+raw_weekly_report_data/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
 
 # 操作系统
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
 # 日志
 *.log
+logs/
+*.log.*
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb_checkpoints
 
 # pytest
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+.tox/
+.nox/
+.hypothesis/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# 压缩文件（如果不想提交）
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# 其他
+*.orig
